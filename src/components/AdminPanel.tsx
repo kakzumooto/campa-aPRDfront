@@ -64,7 +64,7 @@ export function AdminPanel() {
                   <td className="p-5 text-sm text-gray-600">{a.direccion}</td>
                   <td className="p-5">
                     <a 
-                      href={`https://campa-aprd.onrender.com/${a.fotoIneUrl.split('/').pop()}`} 
+                      href={`https://campa-aprd.onrender.com/uploads/ines/${a.fotoIneUrl.split('/').pop()}`} 
                       target="_blank" 
                       className="flex items-center gap-2 text-blue-600 font-bold hover:underline"
                     >
