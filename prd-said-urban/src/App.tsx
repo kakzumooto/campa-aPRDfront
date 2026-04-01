@@ -35,6 +35,8 @@ function App() {
 
         {/* 7. Sección de Afiliación (Donde suben el INE después) */}
         <AfiliacionSection />
+
+         {/*  seccion de adminpanel */}
           <AdminPanel />
       </main>
 
