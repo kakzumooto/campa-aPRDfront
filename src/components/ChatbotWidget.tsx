@@ -26,33 +26,54 @@ export function ChatbotWidget() {
   }, [messages, isTyping]);
 
   const handleSendMessage = async () => {
-    if (!input.trim() || isTyping) return;
+  if (!input.trim() || isTyping) return;
 
-    const userMessage = input;
-    setMessages(prev => [...prev, { text: userMessage, isBot: false }]);
-    setInput('');
-    setIsTyping(true);
+  const userMessage = input;
+  setMessages(prev => [...prev, { text: userMessage, isBot: false }]);
+  setInput('');
+  setIsTyping(true);
 
-    try {
-      // Usamos v1beta para asegurar compatibilidad con modelos serie 2.0/2.5
-      const modelName = "gemini-1.5-flash";
-      const URL = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${API_KEY}`;
+  try {
+    // ESTA ES LA CONFIGURACIÓN QUE TU JSON CONFIRMÓ:
+    // Modelo: gemini-2.5-flash
+    // Versión: v1 (ya que es la versión estable de junio 2025)
+    const modelName = "gemini-2.5-flash"; 
+    const URL = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${API_KEY}`;
 
-      const response = await fetch(URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `Eres Cenicito, la mascota oficial de la campaña de Said Urbán en Melchor Ocampo. 
-              Eres un perrito entusiasta, amigable y leal. Tu misión es convencer a los ciudadanos de que Said 
-              es la mejor opción para el municipio por su experiencia y compromiso. 
-              Responde siempre en español, de forma breve y usa muchos emojis de perritos 🐾.
-              Pregunta del ciudadano: ${userMessage}`
-            }]
+    const response = await fetch(URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `Eres Cenicito, la mascota de la campaña de Said Urbán en Melchor Ocampo. 
+            Eres entusiasta, amigable y usas emojis de perritos 🐾. 
+            Responde breve y en español: ${userMessage}`
           }]
-        })
-      });
+        }]
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.error) {
+      // Si por algo v1 falla, intenta v1beta como último recurso
+      throw new Error(data.error.message);
+    }
+
+    const botText = data.candidates[0].content.parts[0].text;
+    setMessages(prev => [...prev, { text: botText, isBot: true }]);
+
+  } catch (error) {
+    console.error("Error con Gemini 2.5:", error);
+    setMessages(prev => [...prev, { 
+      text: "¡Guau! Mi conexión falló. ¿Me lo repites? 🐾", 
+      isBot: true 
+    }]);
+  } finally {
+    setIsTyping(false);
+  }
+};
 
       const data = await response.json();
 
