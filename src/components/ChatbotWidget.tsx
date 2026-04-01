@@ -26,54 +26,32 @@ export function ChatbotWidget() {
   }, [messages, isTyping]);
 
   const handleSendMessage = async () => {
-  if (!input.trim() || isTyping) return;
+    if (!input.trim() || isTyping) return;
 
-  const userMessage = input;
-  setMessages(prev => [...prev, { text: userMessage, isBot: false }]);
-  setInput('');
-  setIsTyping(true);
+    const userMessage = input;
+    setMessages(prev => [...prev, { text: userMessage, isBot: false }]);
+    setInput('');
+    setIsTyping(true);
 
-  try {
-    // ESTA ES LA CONFIGURACIÓN QUE TU JSON CONFIRMÓ:
-    // Modelo: gemini-2.5-flash
-    // Versión: v1 (ya que es la versión estable de junio 2025)
-    const modelName = "gemini-2.5-flash"; 
-    const URL = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${API_KEY}`;
+    try {
+      // Usamos Gemini 2.5 Flash que es el que tu JSON confirmó como disponible
+      const modelName = "gemini-2.5-flash"; 
+      const URL = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${API_KEY}`;
 
-    const response = await fetch(URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `Eres Cenicito, la mascota de la campaña de Said Urbán en Melchor Ocampo. 
-            Eres entusiasta, amigable y usas emojis de perritos 🐾. 
-            Responde breve y en español: ${userMessage}`
+      const response = await fetch(URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `Eres Cenicito, la mascota de la campaña de Said Urbán en Melchor Ocampo. 
+              Eres entusiasta, amigable y leal. Tu misión es explicar que Said es la mejor opción. 
+              Responde siempre en español, de forma breve y usa emojis de perritos 🐾.
+              Pregunta del ciudadano: ${userMessage}`
+            }]
           }]
-        }]
-      })
-    });
-
-    const data = await response.json();
-
-    if (data.error) {
-      // Si por algo v1 falla, intenta v1beta como último recurso
-      throw new Error(data.error.message);
-    }
-
-    const botText = data.candidates[0].content.parts[0].text;
-    setMessages(prev => [...prev, { text: botText, isBot: true }]);
-
-  } catch (error) {
-    console.error("Error con Gemini 2.5:", error);
-    setMessages(prev => [...prev, { 
-      text: "¡Guau! Mi conexión falló. ¿Me lo repites? 🐾", 
-      isBot: true 
-    }]);
-  } finally {
-    setIsTyping(false);
-  }
-};
+        })
+      });
 
       const data = await response.json();
 
@@ -85,7 +63,7 @@ export function ChatbotWidget() {
       setMessages(prev => [...prev, { text: botText, isBot: true }]);
 
     } catch (error) {
-      console.error("Error con Gemini:", error);
+      console.error("Error con Gemini 2.5:", error);
       setMessages(prev => [...prev, { 
         text: "¡Guau! Mi conexión perruna falló un poquito. ¿Me lo repites? 🐾", 
         isBot: true 
@@ -123,7 +101,6 @@ export function ChatbotWidget() {
             className="fixed bottom-6 right-6 w-96 max-w-[calc(100vw-3rem)] bg-white rounded-3xl shadow-2xl z-50 flex flex-col overflow-hidden border-2 border-[#FFD600]"
             style={{ height: '500px', maxHeight: 'calc(100vh - 3rem)' }}
           >
-            {/* Header del Chat */}
             <div className="bg-black p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <img src={miMascota} alt="Chatbot" className="w-10 h-10 rounded-full border-2 border-[#FFD600]" />
@@ -137,7 +114,6 @@ export function ChatbotWidget() {
               </button>
             </div>
 
-            {/* Cuerpo del Chat */}
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
               {messages.map((message, index) => (
                 <motion.div
@@ -162,7 +138,6 @@ export function ChatbotWidget() {
               )}
             </div>
 
-            {/* Input del Chat */}
             <div className="p-4 bg-white border-t">
               <div className="flex gap-2">
                 <input
