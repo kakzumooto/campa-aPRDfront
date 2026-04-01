@@ -4,14 +4,15 @@ import miMascota from '../assets/perritoPRD.jpeg';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Configuración de la IA
-const genAI = new GoogleGenerativeAI("AIzaSyDd_Ln_5KKySVBTLjYqPCAPoaASgYMBdxc");
+// Usamos la variable de entorno para que no te bloqueen la cuenta en GitHub
+const API_KEY = import.meta.env.VITE_GEMINI_KEY || "TU_LLAVE_LOCAL_PARA_PRUEBAS";
+const genAI = new GoogleGenerativeAI(API_KEY);
 
 export function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     { 
-      text: "¡Hola! Soy el compañero de Said Urbán. 🐾 ¿En qué puedo ayudarte hoy en Melchor Ocampo?", 
+      text: "¡Hola! Soy Cenicito, el compañero de Said Urbán. 🐾 ¿En qué puedo ayudarte hoy en Melchor Ocampo?", 
       isBot: true 
     }
   ]);
@@ -26,54 +27,39 @@ export function ChatbotWidget() {
     }
   }, [messages, isTyping]);
 
-const handleSendMessage = async () => {
-  if (!input.trim() || isTyping) return;
+  const handleSendMessage = async () => {
+    if (!input.trim() || isTyping) return;
 
-  const userMessage = input;
-  setMessages(prev => [...prev, { text: userMessage, isBot: false }]);
-  setInput('');
-  setIsTyping(true);
+    const userMessage = input;
+    setMessages(prev => [...prev, { text: userMessage, isBot: false }]);
+    setInput('');
+    setIsTyping(true);
 
-  try {
-    const API_KEY = "AIzaSyDd_Ln_5KKySVBTLjYqPCAPoaASgYMBdxc";
-    
-    const URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+    try {
+      // Usamos el SDK oficial que ya importaste para que sea más estable que el fetch directo
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const response = await fetch(URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `Eres la mascota oficial de la campaña de Said Urbán  en Melchor Ocampo y te llamas cenicito. 
-            Tu misión es ser amigable, usar emojis de perritos 🐾 y explicar que Said es la mejor opción para el municipio. 
-            Responde de forma breve y entusiasta. 
-            Pregunta del ciudadano: ${userMessage}`
-          }]
-        }]
-      })
-    });
+      const prompt = `Eres la mascota oficial de la campaña de Said Urbán en Melchor Ocampo y te llamas Cenicito. 
+      Tu misión es ser amigable, usar emojis de perritos 🐾 y explicar que Said es la mejor opción para el municipio porque conoce las necesidades de la gente y tiene experiencia. 
+      Responde de forma breve, entusiasta y siempre en español. 
+      Pregunta del ciudadano: ${userMessage}`;
 
-    const data = await response.json();
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const botText = response.text();
 
-    if (data.error) {
-      throw new Error(data.error.message);
+      setMessages(prev => [...prev, { text: botText, isBot: true }]);
+
+    } catch (error) {
+      console.error("Error con Gemini:", error);
+      setMessages(prev => [...prev, { 
+        text: "¡Guau! Mi conexión con el satélite perruno falló. ¿Me repites eso? 🐾", 
+        isBot: true 
+      }]);
+    } finally {
+      setIsTyping(false);
     }
-
-    // Extraemos la respuesta del modelo 2.5
-    const botText = data.candidates[0].content.parts[0].text;
-    setMessages(prev => [...prev, { text: botText, isBot: true }]);
-
-  } catch (error) {
-    console.error("Error con Gemini 2.5:", error);
-    setMessages(prev => [...prev, { 
-      text: "¡Guau! Mi conexión con el satélite perruno falló. ¿Me repites eso? 🐾", 
-      isBot: true 
-    }]);
-  } finally {
-    setIsTyping(false);
-  }
-};
+  };
 
   return (
     <>
@@ -107,7 +93,7 @@ const handleSendMessage = async () => {
               <div className="flex items-center gap-3">
                 <img src={miMascota} alt="Chatbot" className="w-10 h-10 rounded-full border-2 border-[#FFD600]" />
                 <div>
-                  <h3 className="font-bold text-[#FFD600]">Asistente de Said</h3>
+                  <h3 className="font-bold text-[#FFD600]">Cenicito - Auxiliar</h3>
                   <p className="text-[10px] text-green-400 uppercase font-black">En línea 🐾</p>
                 </div>
               </div>
@@ -125,7 +111,7 @@ const handleSendMessage = async () => {
                   className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
                 >
                   <div className={`max-w-[85%] px-4 py-2 rounded-2xl shadow-sm text-sm ${
-                    message.isBot ? 'bg-white text-black' : 'bg-[#FFD600] text-black font-medium'
+                    message.isBot ? 'bg-white text-black border border-gray-200' : 'bg-[#FFD600] text-black font-medium'
                   }`}>
                     {message.text}
                   </div>
@@ -133,8 +119,8 @@ const handleSendMessage = async () => {
               ))}
               {isTyping && (
                 <div className="flex justify-start">
-                  <div className="bg-gray-200 px-4 py-2 rounded-2xl animate-pulse text-xs italic">
-                    El perrito está escribiendo... 🐾
+                  <div className="bg-gray-200 px-4 py-2 rounded-2xl animate-pulse text-xs italic text-gray-600">
+                    Cenicito está pensando... 🐾
                   </div>
                 </div>
               )}
@@ -147,7 +133,7 @@ const handleSendMessage = async () => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder="Pregunta sobre Said Urbán..."
+                  placeholder="Pregúntale a Cenicito..."
                   className="flex-1 px-4 py-2 rounded-full border-2 border-gray-200 focus:border-black focus:outline-none text-sm"
                   disabled={isTyping}
                 />
