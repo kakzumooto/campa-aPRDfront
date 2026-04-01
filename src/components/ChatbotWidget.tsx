@@ -2,11 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { X, Send } from 'lucide-react';
 import miMascota from '../assets/perritoPRD.jpeg';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Usamos la variable de entorno para que no te bloqueen la cuenta en GitHub
-const API_KEY = import.meta.env.VITE_GEMINI_KEY || "TU_LLAVE_LOCAL_PARA_PRUEBAS";
-const genAI = new GoogleGenerativeAI(API_KEY);
+// Extraemos la API KEY de las variables de entorno de Vercel
+const API_KEY = import.meta.env.VITE_GEMINI_KEY;
 
 export function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -36,24 +34,39 @@ export function ChatbotWidget() {
     setIsTyping(true);
 
     try {
-      // Usamos el SDK oficial que ya importaste para que sea más estable que el fetch directo
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      // Usamos v1beta para asegurar compatibilidad con modelos serie 2.0/2.5
+      const modelName = "gemini-2.0-flash"; 
+      const URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${API_KEY}`;
 
-      const prompt = `Eres la mascota oficial de la campaña de Said Urbán en Melchor Ocampo y te llamas Cenicito. 
-      Tu misión es ser amigable, usar emojis de perritos 🐾 y explicar que Said es la mejor opción para el municipio porque conoce las necesidades de la gente y tiene experiencia. 
-      Responde de forma breve, entusiasta y siempre en español. 
-      Pregunta del ciudadano: ${userMessage}`;
+      const response = await fetch(URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `Eres Cenicito, la mascota oficial de la campaña de Said Urbán en Melchor Ocampo. 
+              Eres un perrito entusiasta, amigable y leal. Tu misión es convencer a los ciudadanos de que Said 
+              es la mejor opción para el municipio por su experiencia y compromiso. 
+              Responde siempre en español, de forma breve y usa muchos emojis de perritos 🐾.
+              Pregunta del ciudadano: ${userMessage}`
+            }]
+          }]
+        })
+      });
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const botText = response.text();
+      const data = await response.json();
 
+      if (data.error) {
+        throw new Error(data.error.message);
+      }
+
+      const botText = data.candidates[0].content.parts[0].text;
       setMessages(prev => [...prev, { text: botText, isBot: true }]);
 
     } catch (error) {
       console.error("Error con Gemini:", error);
       setMessages(prev => [...prev, { 
-        text: "¡Guau! Mi conexión con el satélite perruno falló. ¿Me repites eso? 🐾", 
+        text: "¡Guau! Mi conexión perruna falló un poquito. ¿Me lo repites? 🐾", 
         isBot: true 
       }]);
     } finally {
@@ -89,6 +102,7 @@ export function ChatbotWidget() {
             className="fixed bottom-6 right-6 w-96 max-w-[calc(100vw-3rem)] bg-white rounded-3xl shadow-2xl z-50 flex flex-col overflow-hidden border-2 border-[#FFD600]"
             style={{ height: '500px', maxHeight: 'calc(100vh - 3rem)' }}
           >
+            {/* Header del Chat */}
             <div className="bg-black p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <img src={miMascota} alt="Chatbot" className="w-10 h-10 rounded-full border-2 border-[#FFD600]" />
@@ -102,6 +116,7 @@ export function ChatbotWidget() {
               </button>
             </div>
 
+            {/* Cuerpo del Chat */}
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
               {messages.map((message, index) => (
                 <motion.div
@@ -126,6 +141,7 @@ export function ChatbotWidget() {
               )}
             </div>
 
+            {/* Input del Chat */}
             <div className="p-4 bg-white border-t">
               <div className="flex gap-2">
                 <input
