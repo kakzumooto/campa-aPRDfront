@@ -36,7 +36,7 @@ export function ChatbotWidget() {
     try {
       // Usamos v1beta para asegurar compatibilidad con modelos serie 2.0/2.5
       const modelName = "gemini-1.5-flash";
-      const URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${API_KEY}`;
+      const URL = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${API_KEY}`;
 
       const response = await fetch(URL, {
         method: 'POST',
